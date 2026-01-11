@@ -1,0 +1,105 @@
+{
+  "version": "1.0",
+  "description": "技能激活规则配置",
+  "skills": {
+    "review": {
+      "type": "domain",
+      "priority": "high",
+      "description": "代码审查与重构",
+      "triggers": {
+        "keywords": [
+          "审查代码", "review", "检查质量",
+          "重构", "代码精简", "优化设计",
+          "code review", "代码审查", "代码检查",
+          "质量检查", "代码优化"
+        ],
+        "intentPatterns": [
+          "帮我(审查|review|检查).*代码",
+          "这段代码.*问题",
+          "重构.*建议",
+          "优化.*代码",
+          "检查.*质量"
+        ],
+        "pathPatterns": [
+          "apps/server/src/**/*.ts",
+          "apps/admin/src/**/*.{ts,vue}",
+          "apps/miniprogram/**/*.js"
+        ]
+      }
+    },
+    "search": {
+      "type": "domain",
+      "priority": "medium",
+      "description": "多源信息检索",
+      "triggers": {
+        "keywords": [
+          "search", "搜索", "查询最佳实践",
+          "对比调研", "怎么用", "最佳实践",
+          "查一下", "帮我找", "查找资料"
+        ],
+        "intentPatterns": [
+          "搜索.*",
+          "查一下.*",
+          ".*怎么用",
+          ".*最佳实践",
+          "帮我(找|查).*"
+        ]
+      }
+    },
+    "prisma": {
+      "type": "domain",
+      "priority": "high",
+      "description": "Prisma 数据库操作",
+      "triggers": {
+        "keywords": [
+          "prisma", "数据库", "迁移", "migrate",
+          "schema", "模型", "表结构", "字段",
+          "关联", "relation", "索引", "index"
+        ],
+        "intentPatterns": [
+          ".*prisma.*",
+          "创建.*表",
+          "添加.*字段",
+          "数据库.*迁移",
+          "修改.*模型"
+        ],
+        "pathPatterns": [
+          "apps/server/prisma/**/*",
+          "**/schema.prisma"
+        ]
+      }
+    },
+    "api": {
+      "type": "domain",
+      "priority": "high",
+      "description": "API 开发辅助",
+      "triggers": {
+        "keywords": [
+          "api", "接口", "controller", "service",
+          "dto", "crud", "增删改查", "restful",
+          "swagger", "文档"
+        ],
+        "intentPatterns": [
+          "创建.*接口",
+          "添加.*api",
+          "实现.*功能",
+          ".*controller.*",
+          ".*service.*"
+        ],
+        "pathPatterns": [
+          "apps/server/src/modules/**/*.ts"
+        ]
+      }
+    }
+  },
+  "scoring": {
+    "keywordMatch": 10,
+    "patternMatch": 20,
+    "priorityBonus": {
+      "critical": 100,
+      "high": 75,
+      "medium": 50,
+      "low": 25
+    }
+  }
+}

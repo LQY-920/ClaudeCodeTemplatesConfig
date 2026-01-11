@@ -1,0 +1,39 @@
+{
+  "name": "fullstack-scaffold",
+  "version": "1.0.0",
+  "description": "全栈项目脚手架 - NestJS + Vue 3 + 微信小程序",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:server": "npm run dev -w apps/server",
+    "dev:admin": "npm run dev -w apps/admin",
+    "build": "npm run build --workspaces --if-present",
+    "build:server": "npm run build -w apps/server",
+    "build:admin": "npm run build -w apps/admin",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:fix": "npm run lint:fix --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "prisma:migrate": "npm run prisma:migrate -w apps/server",
+    "prisma:generate": "npm run prisma:generate -w apps/server",
+    "prisma:studio": "npm run prisma:studio -w apps/server",
+    "clean": "npm run clean --workspaces --if-present && rm -rf node_modules"
+  },
+  "keywords": [
+    "nestjs",
+    "vue3",
+    "wechat-miniprogram",
+    "prisma",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
