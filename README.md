@@ -15,8 +15,8 @@
 ```
 .
 ├── .claude/                        # Claude Code 配置目录
-│   ├── settings.json               # 核心配置（权限、钩子）
-│   ├── settings.local.json         # 本地配置
+│   ├── settings.json               # 核心配置（权限、钩子、MCP）
+│   ├── settings.local.json         # 本地配置（不提交 Git）
 │   │
 │   ├── rules/                      # 规则系统
 │   │   ├── principles.md           # 核心原则（始终加载）
@@ -28,12 +28,14 @@
 │   │   ├── admin/vue.md            # Vue 3 规范（条件加载）
 │   │   └── miniprogram/wechat.md   # 微信小程序规范（条件加载）
 │   │
-│   ├── skills/                     # 技能系统
-│   │   ├── skill-rules.json        # 技能匹配规则
-│   │   ├── review/                 # 代码审查技能
-│   │   ├── search/                 # 多源搜索技能
-│   │   ├── prisma/                 # 数据库操作技能
-│   │   ├── api/                    # API 开发技能
+│   ├── skills/                     # 技能系统（2.1 description 自动匹配）
+│   │   ├── commit/SKILL.md         # Git 提交规范
+│   │   ├── review/SKILL.md         # 代码审查技能
+│   │   ├── search/SKILL.md         # 多源搜索技能
+│   │   ├── prisma/SKILL.md         # 数据库操作技能
+│   │   ├── prisma-migrate/SKILL.md # 数据库迁移向导
+│   │   ├── api/SKILL.md            # API 开发技能
+│   │   ├── api-doc/SKILL.md        # API 文档生成
 │   │   ├── frontend-design/        # 前端设计技能
 │   │   ├── ui-ux-pro-max/          # UI/UX 专业设计技能
 │   │   ├── xlsx/                   # Excel 表格处理技能
@@ -43,11 +45,6 @@
 │   │   ├── skill-activation-prompt.js   # 技能激活提示
 │   │   ├── post-tool-use-tracker.js     # 文件修改追踪
 │   │   └── task-complete-sound.js       # 任务完成提示音
-│   │
-│   ├── commands/                   # 自定义命令
-│   │   ├── commit.md               # Git 提交规范
-│   │   ├── prisma-migrate.md       # 数据库迁移
-│   │   └── api-doc.md              # API 文档生成
 │   │
 │   ├── agents/                     # 智能体
 │   │   └── changelog-writer.md     # 变更日志生成
@@ -85,16 +82,19 @@
 | `admin/vue.md` | `apps/admin/**/*.{ts,vue}` | Vue 3 组合式 API、Element Plus |
 | `miniprogram/wechat.md` | `apps/miniprogram/**/*` | 微信小程序原生开发规范 |
 
-### Skills 技能系统
+### Skills 技能系统（Claude Code 2.1）
 
-技能通过关键词或正则匹配自动激活，也可手动调用：
+技能根据 `description` 中的触发词自动匹配，也可手动调用：
 
 | 技能 | 触发词 | 说明 |
 |------|--------|------|
+| `/commit` | commit、提交、git commit | 生成规范化 Git 提交消息 |
 | `/review` | 审查代码、review、重构、代码优化 | 代码审查与重构建议 |
 | `/search` | 搜索、查一下、怎么用、最佳实践 | 多源信息检索与对比 |
 | `/prisma` | prisma、数据库、迁移、schema | Prisma 数据库操作 |
+| `/prisma-migrate` | prisma、数据库、迁移、schema | Prisma 数据库迁移向导 |
 | `/api` | api、接口、controller、service | API 开发辅助 |
+| `/api-doc` | api、接口、文档、swagger | 生成 API 接口文档 |
 | `/frontend-design` | 前端设计、UI、组件 | 高质量前端界面设计 |
 | `/ui-ux-pro-max` | UI/UX、设计系统 | 专业级 UI/UX 设计 |
 | `/xlsx` | Excel、表格、数据分析 | 电子表格处理 |
@@ -104,17 +104,9 @@
 
 | 钩子 | 触发时机 | 功能 |
 |------|----------|------|
-| `skill-activation-prompt` | 用户提交前 | 根据输入匹配技能 |
-| `post-tool-use-tracker` | 文件修改后 | 追踪变更文件 |
+| `skill-activation-prompt` | 用户提交前 | 根据输入匹配技能（2.1 读取 description） |
+| `post-tool-use-tracker` | 文件修改后 | 追踪变更文件和项目区域 |
 | `task-complete-sound` | 任务完成时 | 播放提示音 |
-
-### Commands 自定义命令
-
-```bash
-/commit           # 生成规范化 Git 提交消息
-/prisma-migrate   # Prisma 数据库迁移向导
-/api-doc          # 生成 API 文档
-```
 
 ## 快速开始
 
@@ -217,4 +209,4 @@ MIT License
 
 ---
 
-> 基于 [Claude Code 进阶：Rules + Skills + Hooks 三板斧配置指南](https://mp.weixin.qq.com/s/cZqR-y2te-CJzfaiVAydmw) 设计
+> 基于 [Claude Code 2.1 项目实战配置](https://mp.weixin.qq.com/s/uSdWSI1zlAuZ6uQ3Y3uEng) 设计
