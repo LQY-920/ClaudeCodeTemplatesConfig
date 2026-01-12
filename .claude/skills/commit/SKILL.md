@@ -1,6 +1,10 @@
 ---
-description: 生成符合规范的 Git 提交消息
+name: commit
+description: "生成符合规范的 Git 提交消息。触发词：commit、提交、git commit、生成提交信息"
+user-invocable: true
 ---
+
+# Git 提交消息生成技能
 
 分析当前 git diff，生成符合项目 Git 提交规范的提交消息。
 

@@ -1,6 +1,10 @@
 ---
-description: 生成 API 接口文档
+name: api-doc
+description: "生成 API 接口文档。触发词：api、接口、文档、swagger、接口文档"
+user-invocable: true
 ---
+
+# API 接口文档生成技能
 
 根据代码自动生成或更新 API 接口文档。
 

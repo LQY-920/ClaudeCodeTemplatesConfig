@@ -24,7 +24,19 @@
       "WebSearch",
       "mcp__context7__*",
       "mcp__exa__*",
-      "mcp__chrome-devtools__*"
+      "mcp__chrome-devtools__*",
+      "Skill(/commit)",
+      "Skill(/review)",
+      "Skill(/search)",
+      "Skill(/prisma)",
+      "Skill(/prisma-migrate)",
+      "Skill(/api)",
+      "Skill(/api-doc)",
+      "Skill(/frontend-design)",
+      "Skill(/ui-ux-pro-max)",
+      "Skill(/xlsx)",
+      "Skill(/skill-creator)",
+      "Skill(/changelog-writer)"
     ],
     "deny": [
       "Bash(rm -rf /)",

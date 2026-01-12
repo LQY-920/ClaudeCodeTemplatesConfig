@@ -1,10 +1,9 @@
-/**
- * 技能激活提示钩子
- * 在用户提交 prompt 时自动匹配并建议相关 Skill
- *
- * 触发时机: UserPromptSubmit
- * 输入: stdin JSON { prompt, session_id, ... }
- */
+// 技能激活提示钩子 (Claude Code 2.1)
+// 在用户提交 prompt 时自动匹配并建议相关 Skill
+// 触发时机: UserPromptSubmit
+// 输入: stdin JSON { prompt, session_id, ... }
+// 更新说明: 现在直接从 skills/*/SKILL.md 的 frontmatter 读取 description
+// 不再依赖已废弃的 skill-rules.json
 
 const fs = require('fs');
 const path = require('path');
@@ -12,15 +11,88 @@ const path = require('path');
 // 获取项目根目录
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
-// 读取技能规则配置
-function loadSkillRules() {
-  try {
-    const rulesPath = path.join(projectDir, '.claude/skills/skill-rules.json');
-    const content = fs.readFileSync(rulesPath, 'utf-8');
-    return JSON.parse(content);
-  } catch (error) {
-    return null;
+// 解析 YAML frontmatter
+function parseFrontmatter(content) {
+  const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
+  const match = content.match(frontmatterRegex);
+
+  if (!match) return { frontmatter: {}, content };
+
+  const frontmatterStr = match[1];
+  const bodyContent = match[2];
+
+  const frontmatter = {};
+  const lines = frontmatterStr.split('\n');
+
+  for (const line of lines) {
+    const colonIndex = line.indexOf(':');
+    if (colonIndex > 0) {
+      const key = line.slice(0, colonIndex).trim();
+      let value = line.slice(colonIndex + 1).trim();
+
+      // 移除引号
+      if ((value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+
+      frontmatter[key] = value;
+    }
   }
+
+  return { frontmatter, content: bodyContent };
+}
+
+// 从 skills/*/SKILL.md 加载技能
+function loadSkillsFromMD() {
+  const skillsDir = path.join(projectDir, '.claude/skills');
+  const skills = [];
+
+  try {
+    if (!fs.existsSync(skillsDir)) return skills;
+
+    const items = fs.readdirSync(skillsDir, { withFileTypes: true });
+
+    for (const item of items) {
+      if (!item.isDirectory()) continue;
+
+      const skillPath = path.join(skillsDir, item.name);
+      const skillMDPath = path.join(skillPath, 'SKILL.md');
+
+      if (!fs.existsSync(skillMDPath)) continue;
+
+      try {
+        const content = fs.readFileSync(skillMDPath, 'utf-8');
+        const { frontmatter } = parseFrontmatter(content);
+
+        if (frontmatter.name && frontmatter.description) {
+          // 从 description 中提取触发词
+          const triggerMatch = frontmatter.description.match(/触发词[：:]\s*(.+?)(?:\.|$)/);
+          const triggersStr = triggerMatch ? triggerMatch[1] : frontmatter.description;
+
+          // 分割触发词（支持中英文逗号、顿号分隔）
+          const keywords = triggersStr
+            .split(/[,，、]/)
+            .map((kw) => kw.trim())
+            .filter((kw) => kw.length > 0);
+
+          skills.push({
+            name: frontmatter.name,
+            description: frontmatter.description,
+            keywords,
+            priority: 'medium', // 默认优先级
+            userInvocable: frontmatter['user-invocable'] === 'true',
+          });
+        }
+      } catch (e) {
+        // 忽略单个技能文件的错误
+      }
+    }
+  } catch (e) {
+    // 忽略错误
+  }
+
+  return skills;
 }
 
 // 关键词匹配
@@ -29,34 +101,10 @@ function matchKeywords(prompt, keywords) {
   return keywords.filter((kw) => lowerPrompt.includes(kw.toLowerCase()));
 }
 
-// 意图模式匹配（正则）
-function matchIntentPatterns(prompt, patterns) {
-  const matched = [];
-  for (const pattern of patterns) {
-    try {
-      const regex = new RegExp(pattern, 'i');
-      if (regex.test(prompt)) {
-        matched.push(pattern);
-      }
-    } catch (e) {
-      // 忽略无效的正则
-    }
-  }
-  return matched;
-}
-
 // 计算匹配分数
-function calculateScore(matchedKeywords, matchedPatterns, priority, scoring) {
-  const keywordScore = matchedKeywords.length * (scoring.keywordMatch || 10);
-  const patternScore = matchedPatterns.length * (scoring.patternMatch || 20);
-  const priorityBonus = scoring.priorityBonus || {
-    critical: 100,
-    high: 75,
-    medium: 50,
-    low: 25,
-  };
-  const priorityScore = priorityBonus[priority] || 0;
-  return keywordScore + patternScore + priorityScore;
+function calculateScore(matchedKeywords) {
+  // 关键词匹配分数：每个匹配关键词 10 分
+  return matchedKeywords.length * 10;
 }
 
 // 从 stdin 读取 JSON 数据
@@ -152,43 +200,29 @@ async function main() {
     console.log('[Rules] 已加载规则: ' + activeRules.join(', '));
   }
 
+  // 加载所有 Skills
+  const allSkills = loadSkillsFromMD();
+  const userInvocableSkills = allSkills.filter((s) => s.userInvocable);
+  console.log('[Skill] 已加载 ' + userInvocableSkills.length + ' 个技能');
+
   if (!prompt) {
-    console.log('[Skill] 未检测到提示词内容');
     console.log('');
     return;
   }
-
-  const config = loadSkillRules();
-  if (!config || !config.skills) {
-    console.log('[Skill] 技能配置未找到');
-    console.log('');
-    return;
-  }
-
-  const skillCount = Object.keys(config.skills).length;
-  console.log('[Skill] 已加载 ' + skillCount + ' 个技能');
 
   const matches = [];
 
-  for (const [skillName, skill] of Object.entries(config.skills)) {
-    const triggers = skill.triggers || {};
-    const matchedKeywords = matchKeywords(prompt, triggers.keywords || []);
-    const matchedPatterns = matchIntentPatterns(prompt, triggers.intentPatterns || []);
+  for (const skill of allSkills) {
+    const matchedKeywords = matchKeywords(prompt, skill.keywords);
 
-    if (matchedKeywords.length > 0 || matchedPatterns.length > 0) {
-      const score = calculateScore(
-        matchedKeywords,
-        matchedPatterns,
-        skill.priority,
-        config.scoring || {}
-      );
+    if (matchedKeywords.length > 0) {
+      const score = calculateScore(matchedKeywords);
 
       matches.push({
-        skillName,
+        name: skill.name,
         description: skill.description,
         priority: skill.priority,
         matchedKeywords,
-        matchedPatterns,
         score,
       });
     }
@@ -222,7 +256,7 @@ async function main() {
     if (group.length > 0) {
       console.log('[' + priorityLabels[priority] + ']:');
       for (const match of group) {
-        console.log('  -> /' + match.skillName + ': ' + match.description);
+        console.log('  -> /' + match.name + ': ' + match.description);
         if (match.matchedKeywords.length > 0) {
           console.log('     匹配关键词: ' + match.matchedKeywords.join(', '));
         }

@@ -1,6 +1,10 @@
 ---
-description: Prisma 数据库迁移辅助
+name: prisma-migrate
+description: "Prisma 数据库迁移辅助。触发词：prisma、数据库、迁移、schema、模型、表结构"
+user-invocable: true
 ---
+
+# Prisma 数据库迁移技能
 
 辅助执行 Prisma 数据库迁移操作，确保迁移安全可靠。
 

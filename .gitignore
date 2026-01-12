@@ -1,30 +1,32 @@
-# 敏感配置文件 - 包含 API 密钥
-.mcp.json
+# =====================================================
+# 白名单模式：只跟踪配置脚手架文件
+# =====================================================
 
-# Claude Code 运行时文件
+# 1. 先忽略所有内容
+*
+
+# 2. 然后否定（即跟踪）特定的文件/目录
+!.gitignore
+!.env.example
+!.mcp.json
+!package.json
+!CLAUDE.md
+!.claude/
+
+# 3. 排除 .claude 目录下的运行时临时文件
 .claude/.session-tracking.json
 .claude/settings.local.json
 .claude/.temp-play.ps1
+.claude/audio/
+.claude/**/__pycache__/
 
-# 系统文件
+# 4. 不跟踪的额外文件
+LICENSE
+.mcp.json.example
+
+# =====================================================
+# 以下是安全/系统文件的忽略规则（白名单模式兼容）
+# =====================================================
 .DS_Store
 Thumbs.db
 desktop.ini
-
-# IDE/编辑器
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# 依赖目录
-node_modules/
-__pycache__/
-*.pyc
-.env
-.env.local
-
-# 构建输出
-dist/
-build/
-*.log
