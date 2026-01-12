@@ -17,19 +17,19 @@ const trackingFile = path.join(projectDir, '.claude/.session-tracking.json');
 
 // 项目区域检测规则
 const PROJECT_AREAS = {
-  server: [/apps[/\]server[/\]/, /\.ts$/],
-  admin: [/apps[/\]admin[/\]/, /\.(vue|ts|tsx)$/],
-  miniprogram: [/apps[/\]miniprogram[/\]/, /\.(js|wxml|wxss|json)$/],
-  prisma: [/prisma[/\]/, /schema\.prisma$/],
+  server: [/apps[/\\]server[/\\]/, /\.ts$/],
+  admin: [/apps[/\\]admin[/\\]/, /\.(vue|ts|tsx)$/],
+  miniprogram: [/apps[/\\]miniprogram[/\\]/, /\.(js|wxml|wxss|json)$/],
+  prisma: [/prisma[/\\]/, /schema\.prisma$/],
   config: [/\.json$/, /\.yaml$/, /\.yml$/, /\.toml$/],
-  docs: [/docs[/\]/, /\.md$/],
-  tests: [/tests?[/\]/, /\.test\.[tj]sx?$/, /\.spec\.[tj]sx?$/],
+  docs: [/docs[/\\]/, /\.md$/],
+  tests: [/tests?[/\\]/, /\.test\.[tj]sx?$/, /\.spec\.[tj]sx?$/],
 };
 
 // 检测文件所属项目区域
 function detectProjectAreas(filePath) {
   const areas = [];
-  const normalizedPath = filePath.replace(/\/g, '/');
+  const normalizedPath = filePath.replace(/\\/g, '/');
 
   for (const [area, patterns] of Object.entries(PROJECT_AREAS)) {
     for (const pattern of patterns) {
