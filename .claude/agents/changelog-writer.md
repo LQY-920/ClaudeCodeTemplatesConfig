@@ -1,3 +1,8 @@
+---
+name: changelog-writer
+description: 当代码准备合并到主分支时，帮助生成专业的 CHANGELOG 条目
+---
+
 # Changelog Writer Agent
 
 当代码准备合并到主分支时，帮助生成专业的 CHANGELOG 条目。
