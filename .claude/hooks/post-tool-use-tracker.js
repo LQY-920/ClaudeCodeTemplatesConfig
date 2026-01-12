@@ -3,6 +3,7 @@
  * 追踪 Edit/Write/MultiEdit 修改的文件
  *
  * 触发时机: PostToolUse (matcher: Edit|MultiEdit|Write)
+ * 输入: stdin JSON { tool_name, tool_input, tool_response }
  */
 
 const fs = require('fs');
@@ -16,19 +17,19 @@ const trackingFile = path.join(projectDir, '.claude/.session-tracking.json');
 
 // 项目区域检测规则
 const PROJECT_AREAS = {
-  server: [/apps[/\\]server[/\\]/, /\.ts$/],
-  admin: [/apps[/\\]admin[/\\]/, /\.(vue|ts|tsx)$/],
-  miniprogram: [/apps[/\\]miniprogram[/\\]/, /\.(js|wxml|wxss|json)$/],
-  prisma: [/prisma[/\\]/, /schema\.prisma$/],
+  server: [/apps[/\]server[/\]/, /\.ts$/],
+  admin: [/apps[/\]admin[/\]/, /\.(vue|ts|tsx)$/],
+  miniprogram: [/apps[/\]miniprogram[/\]/, /\.(js|wxml|wxss|json)$/],
+  prisma: [/prisma[/\]/, /schema\.prisma$/],
   config: [/\.json$/, /\.yaml$/, /\.yml$/, /\.toml$/],
-  docs: [/docs[/\\]/, /\.md$/],
-  tests: [/tests?[/\\]/, /\.test\.[tj]sx?$/, /\.spec\.[tj]sx?$/],
+  docs: [/docs[/\]/, /\.md$/],
+  tests: [/tests?[/\]/, /\.test\.[tj]sx?$/, /\.spec\.[tj]sx?$/],
 };
 
 // 检测文件所属项目区域
 function detectProjectAreas(filePath) {
   const areas = [];
-  const normalizedPath = filePath.replace(/\\/g, '/');
+  const normalizedPath = filePath.replace(/\/g, '/');
 
   for (const [area, patterns] of Object.entries(PROJECT_AREAS)) {
     for (const pattern of patterns) {
@@ -80,10 +81,58 @@ function saveTracking(data) {
   }
 }
 
+// 从 stdin 读取 JSON 数据
+function readStdin() {
+  return new Promise((resolve) => {
+    let data = '';
+
+    const timeout = setTimeout(() => {
+      resolve(data);
+    }, 100);
+
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('readable', () => {
+      let chunk;
+      while ((chunk = process.stdin.read()) !== null) {
+        data += chunk;
+      }
+    });
+    process.stdin.on('end', () => {
+      clearTimeout(timeout);
+      resolve(data);
+    });
+
+    if (process.stdin.isTTY) {
+      clearTimeout(timeout);
+      resolve('');
+    }
+  });
+}
+
 // 主函数
-function main() {
-  // 从环境变量获取修改的文件路径
-  const filePath = process.env.TOOL_FILE_PATH || process.env.FILE_PATH || '';
+async function main() {
+  // 从 stdin 读取 JSON 数据
+  const stdinData = await readStdin();
+
+  let filePath = '';
+
+  if (stdinData) {
+    try {
+      const input = JSON.parse(stdinData);
+      // 尝试从 tool_input 中获取文件路径
+      filePath = input.tool_input?.file_path ||
+                 input.tool_input?.path ||
+                 input.file_path ||
+                 '';
+    } catch (e) {
+      // 忽略解析错误
+    }
+  }
+
+  // 回退到环境变量
+  if (!filePath) {
+    filePath = process.env.TOOL_FILE_PATH || process.env.FILE_PATH || '';
+  }
 
   if (!filePath) {
     return;
@@ -115,10 +164,10 @@ function main() {
   const areaLabel = areas.join(', ');
 
   console.log('');
-  console.log(`📝 文件修改追踪:`);
-  console.log(`  → ${relativePath} [${areaLabel}]`);
-  console.log(`  (本会话共修改 ${tracking.modifiedFiles.length} 个文件)`);
+  console.log('文件修改追踪:');
+  console.log('  -> ' + relativePath + ' [' + areaLabel + ']');
+  console.log('  (本会话共修改 ' + tracking.modifiedFiles.length + ' 个文件)');
   console.log('');
 }
 
-main();
+main().catch(() => {});

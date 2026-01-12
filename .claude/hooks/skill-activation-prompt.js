@@ -3,6 +3,7 @@
  * 在用户提交 prompt 时自动匹配并建议相关 Skill
  *
  * 触发时机: UserPromptSubmit
+ * 输入: stdin JSON { prompt, session_id, ... }
  */
 
 const fs = require('fs');
@@ -58,10 +59,57 @@ function calculateScore(matchedKeywords, matchedPatterns, priority, scoring) {
   return keywordScore + patternScore + priorityScore;
 }
 
+// 从 stdin 读取 JSON 数据
+function readStdin() {
+  return new Promise((resolve) => {
+    let data = '';
+
+    // 设置超时，避免无限等待
+    const timeout = setTimeout(() => {
+      resolve(data);
+    }, 100);
+
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('readable', () => {
+      let chunk;
+      while ((chunk = process.stdin.read()) !== null) {
+        data += chunk;
+      }
+    });
+    process.stdin.on('end', () => {
+      clearTimeout(timeout);
+      resolve(data);
+    });
+
+    // 如果没有数据，立即返回
+    if (process.stdin.isTTY) {
+      clearTimeout(timeout);
+      resolve('');
+    }
+  });
+}
+
 // 主函数
-function main() {
-  // 从环境变量或标准输入获取用户 prompt
-  const prompt = process.env.USER_PROMPT || '';
+async function main() {
+  // 从 stdin 读取 JSON 数据
+  const stdinData = await readStdin();
+
+  let prompt = '';
+
+  if (stdinData) {
+    try {
+      const input = JSON.parse(stdinData);
+      prompt = input.prompt || input.user_prompt || '';
+    } catch (e) {
+      // 如果不是 JSON，直接使用原始数据
+      prompt = stdinData;
+    }
+  }
+
+  // 回退到环境变量
+  if (!prompt) {
+    prompt = process.env.USER_PROMPT || process.env.PROMPT || '';
+  }
 
   if (!prompt) {
     return;
@@ -107,17 +155,14 @@ function main() {
 
   // 输出匹配结果
   const priorityLabels = {
-    critical: '🔴 CRITICAL',
-    high: '🟠 HIGH',
-    medium: '🟡 MEDIUM',
-    low: '🟢 LOW',
+    critical: 'CRITICAL',
+    high: 'HIGH',
+    medium: 'MEDIUM',
+    low: 'LOW',
   };
 
   console.log('');
-  console.log('╔══════════════════════════════════════════════════════════════╗');
-  console.log('║                   🎯 技能激活建议                             ║');
-  console.log('╚══════════════════════════════════════════════════════════════╝');
-  console.log('');
+  console.log('========== 技能激活建议 ==========');
 
   // 按优先级分组输出
   const priorities = ['critical', 'high', 'medium', 'low'];
@@ -125,20 +170,19 @@ function main() {
   for (const priority of priorities) {
     const group = matches.filter((m) => m.priority === priority);
     if (group.length > 0) {
-      console.log(`${priorityLabels[priority]}:`);
+      console.log('[' + priorityLabels[priority] + ']:');
       for (const match of group) {
-        console.log(`  → /${match.skillName}: ${match.description}`);
+        console.log('  -> /' + match.skillName + ': ' + match.description);
         if (match.matchedKeywords.length > 0) {
-          console.log(`    匹配关键词: ${match.matchedKeywords.join(', ')}`);
+          console.log('     匹配关键词: ' + match.matchedKeywords.join(', '));
         }
       }
-      console.log('');
     }
   }
 
-  console.log('────────────────────────────────────────────────────────────────');
+  console.log('==================================');
   console.log('提示: 输入 /<技能名> 可激活对应技能');
   console.log('');
 }
 
-main();
+main().catch(() => {});
