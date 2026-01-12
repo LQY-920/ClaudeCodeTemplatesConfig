@@ -89,8 +89,43 @@ function readStdin() {
   });
 }
 
+// 加载已激活的 Rules
+function loadActiveRules() {
+  const rulesDir = path.join(projectDir, '.claude/rules');
+  const activeRules = [];
+
+  try {
+    if (!fs.existsSync(rulesDir)) return activeRules;
+
+    const scanDir = (dir, prefix = '') => {
+      const items = fs.readdirSync(dir);
+      for (const item of items) {
+        const fullPath = path.join(dir, item);
+        const stat = fs.statSync(fullPath);
+
+        if (stat.isDirectory()) {
+          scanDir(fullPath, prefix + item + '/');
+        } else if (item.endsWith('.md')) {
+          const ruleName = prefix + item.replace('.md', '');
+          activeRules.push(ruleName);
+        }
+      }
+    };
+
+    scanDir(rulesDir);
+  } catch (e) {
+    // 忽略错误
+  }
+
+  return activeRules;
+}
+
 // 主函数
 async function main() {
+  // 始终输出 hook 触发标识
+  console.log('');
+  console.log('[Hook] UserPromptSubmit 已触发');
+
   // 从 stdin 读取 JSON 数据
   const stdinData = await readStdin();
 
@@ -111,14 +146,27 @@ async function main() {
     prompt = process.env.USER_PROMPT || process.env.PROMPT || '';
   }
 
+  // 输出已加载的 Rules
+  const activeRules = loadActiveRules();
+  if (activeRules.length > 0) {
+    console.log('[Rules] 已加载规则: ' + activeRules.join(', '));
+  }
+
   if (!prompt) {
+    console.log('[Skill] 未检测到提示词内容');
+    console.log('');
     return;
   }
 
   const config = loadSkillRules();
   if (!config || !config.skills) {
+    console.log('[Skill] 技能配置未找到');
+    console.log('');
     return;
   }
+
+  const skillCount = Object.keys(config.skills).length;
+  console.log('[Skill] 已加载 ' + skillCount + ' 个技能');
 
   const matches = [];
 
@@ -150,6 +198,8 @@ async function main() {
   matches.sort((a, b) => b.score - a.score);
 
   if (matches.length === 0) {
+    console.log('[Skill] 未匹配到相关技能');
+    console.log('');
     return;
   }
 

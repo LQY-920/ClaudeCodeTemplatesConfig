@@ -9,6 +9,10 @@ const { exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
+// 始终输出 hook 触发标识
+console.log('');
+console.log('[Hook] Stop 已触发 (任务完成)');
+
 // 获取项目根目录
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
@@ -17,9 +21,14 @@ const audioFile = path.join(projectDir, '.claude', 'audio', 'down.mp3');
 
 // 检查文件是否存在
 if (!fs.existsSync(audioFile)) {
+  console.log('[Sound] 提示音文件不存在，跳过播放');
+  console.log('');
   // 静默退出，不影响主流程
   process.exit(0);
 }
+
+console.log('[Sound] 播放任务完成提示音...');
+console.log('');
 
 // Windows 下使用 PowerShell 播放音频
 const isWindows = process.platform === 'win32';

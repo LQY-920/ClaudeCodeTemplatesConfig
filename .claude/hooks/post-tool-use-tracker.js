@@ -111,14 +111,20 @@ function readStdin() {
 
 // 主函数
 async function main() {
+  // 始终输出 hook 触发标识
+  console.log('');
+  console.log('[Hook] PostToolUse 已触发 (Edit/Write/MultiEdit)');
+
   // 从 stdin 读取 JSON 数据
   const stdinData = await readStdin();
 
   let filePath = '';
+  let toolName = '';
 
   if (stdinData) {
     try {
       const input = JSON.parse(stdinData);
+      toolName = input.tool_name || '';
       // 尝试从 tool_input 中获取文件路径
       filePath = input.tool_input?.file_path ||
                  input.tool_input?.path ||
@@ -134,7 +140,13 @@ async function main() {
     filePath = process.env.TOOL_FILE_PATH || process.env.FILE_PATH || '';
   }
 
+  if (toolName) {
+    console.log('[Tool] 工具名称: ' + toolName);
+  }
+
   if (!filePath) {
+    console.log('[Track] 未检测到文件路径');
+    console.log('');
     return;
   }
 
@@ -163,10 +175,10 @@ async function main() {
   const relativePath = path.relative(projectDir, filePath);
   const areaLabel = areas.join(', ');
 
-  console.log('');
-  console.log('文件修改追踪:');
-  console.log('  -> ' + relativePath + ' [' + areaLabel + ']');
-  console.log('  (本会话共修改 ' + tracking.modifiedFiles.length + ' 个文件)');
+  console.log('[Track] 文件修改追踪:');
+  console.log('        路径: ' + relativePath);
+  console.log('        区域: [' + areaLabel + ']');
+  console.log('        本会话共修改 ' + tracking.modifiedFiles.length + ' 个文件');
   console.log('');
 }
 
