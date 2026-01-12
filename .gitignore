@@ -12,6 +12,7 @@
 !package.json
 !CLAUDE.md
 !.claude/
+!CC_Study_KMS/
 
 # 3. 排除 .claude 目录下的运行时临时文件
 .claude/.session-tracking.json

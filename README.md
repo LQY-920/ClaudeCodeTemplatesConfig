@@ -208,5 +208,3 @@ npm run typecheck          # TypeScript 类型检查
 MIT License
 
 ---
-
-> 基于 [Claude Code 2.1 项目实战配置](https://mp.weixin.qq.com/s/uSdWSI1zlAuZ6uQ3Y3uEng) 设计
